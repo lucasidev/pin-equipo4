@@ -1,0 +1,36 @@
+# Claude Code (no traces of AI tooling in the repo)
+.claude/
+CLAUDE.md
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+compose/.env
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+.terraform.lock.hcl.bak
+
+# SBOM / scan artifacts
+sbom.json
+*.sbom.json
+*.cdx.json
+
+# k6 output
+k6/results/
+*.k6-summary.json
+
+# Logs / OS / IDE
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
