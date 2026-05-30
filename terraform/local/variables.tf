@@ -123,6 +123,12 @@ variable "grafana_admin_password" {
   sensitive   = true
 }
 
+variable "rate_limit_max" {
+  description = "Per-IP request cap per minute on the api. Default 120 (production-ish); raise it (e.g. 2000) for load testing from a single IP."
+  type        = number
+  default     = 120
+}
+
 # ─── Host ports ────────────────────────────────────────────────────
 
 variable "api_host_port" {

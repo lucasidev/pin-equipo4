@@ -1,8 +1,7 @@
 # The six long-running services. depends_on in the docker provider waits
-# for container creation, not health, so the app containers use
+# for container creation, not health, so the app containers also use
 # restart = "unless-stopped" to recover if they start before their
-# dependencies accept connections. The api image carries its own
-# HEALTHCHECK (wget on /health), so no healthcheck block is set here for it.
+# dependencies accept connections. Healthchecks mirror the compose file.
 
 resource "docker_container" "mongo" {
   name    = "${var.network_name}-mongo"
@@ -78,7 +77,7 @@ resource "docker_container" "api" {
     "POKEAPI_BASE_URL=https://pokeapi.co/api/v2",
     "POKEAPI_CACHE_TTL_SECONDS=3600",
     "RATE_LIMIT_WINDOW_MS=60000",
-    "RATE_LIMIT_MAX=120",
+    "RATE_LIMIT_MAX=${var.rate_limit_max}",
     "CORS_ORIGIN=http://localhost:${var.web_host_port}",
   ]
 
@@ -90,6 +89,14 @@ resource "docker_container" "api" {
   networks_advanced {
     name    = docker_network.pin.name
     aliases = ["api"]
+  }
+
+  healthcheck {
+    test         = ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+    interval     = "5s"
+    timeout      = "5s"
+    retries      = 12
+    start_period = "10s"
   }
 
   depends_on = [docker_container.mongo, docker_container.redis]
