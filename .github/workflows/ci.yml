@@ -27,15 +27,32 @@ jobs:
         with:
           terraform_version: "1.9.8"
 
-      - name: Terraform fmt (check)
-        run: terraform fmt -check -recursive terraform
+      #- name: Terraform fmt (check)
+      #  run: terraform fmt -check -recursive terraform
 
-      - name: Terraform init (local, no backend)
-        run: terraform -chdir=terraform/local init -backend=false
+      #- name: Terraform init (local, no backend)
+        #run: terraform -chdir=terraform/local init -backend=false
 
-      - name: Terraform validate (local)
-        run: terraform -chdir=terraform/local validate
+      #- name: Terraform validate (local)
+      #  run: terraform -chdir=terraform/local validate
+ # Ejecuta la validación de formato usando la ruta de la carpeta terraform/
+      - name: Validar formato del código
+        run: terraform -chdir=terraform/aws fmt -check
 
+      - name: Inicializar Terraform (Descarga de proveedores)
+        run: terraform -chdir=terraform/aws init
+
+      - name: Validar sintaxis de los archivos .tf
+        run: terraform -chdir=terraform/aws validate
+
+      # Fase CI: Se ejecuta en Pull Requests para previsualizar los cambios en AWS
+      - name: Planificar cambios (Terraform Plan)
+        if: github.event_name == 'pull_request'
+        run: terraform -chdir=terraform/aws plan
+       # Fase CD: Se ejecuta SOLO cuando los cambios se consolidan en la rama main
+      - name: Aplicar cambios en AWS (Terraform Apply)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform -chdir=terraform/aws apply -auto-approve
       - name: Validate docker compose
         run: docker compose -f compose/docker-compose.yml config > /dev/null
 
