@@ -1,0 +1,27 @@
+# Copy to terraform.tfvars and fill with real values. terraform.tfvars is
+# gitignored. Only the secrets without a default are strictly required.
+
+mongo_root_password    = "change-me-to-a-real-secret"
+redis_password         = "change-me-to-a-real-secret"
+jwt_secret             = "change-me-to-a-long-random-string-min-32-chars"
+admin_password         = "change-me-min-8-chars"
+grafana_admin_password = "change-me"
+
+# Optional overrides (defaults shown):
+# mongo_root_user      = "pokedex"
+# admin_name           = "admin"
+# admin_email          = "admin@pokedex.local"
+# admin_username       = "pokeadmin"
+# grafana_admin_user   = "admin"
+# api_host_port        = 3000
+# web_host_port        = 8080
+# prometheus_host_port = 9090
+# grafana_host_port    = 3001
+
+# Engine host override (defaults to auto-detect):
+# Windows Docker Desktop:
+# docker_host = "npipe:////./pipe/docker_engine"
+# Windows podman:
+# docker_host = "npipe:////./pipe/podman-machine-default"
+# Linux podman:
+# docker_host = "unix:///run/user/1000/podman/podman.sock"
