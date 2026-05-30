@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate infra (terraform + compose)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Terraform fmt (check)
+        run: terraform fmt -check -recursive terraform
+
+      - name: Terraform init (local, no backend)
+        run: terraform -chdir=terraform/local init -backend=false
+
+      - name: Terraform validate (local)
+        run: terraform -chdir=terraform/local validate
+
+      - name: Validate docker compose
+        run: docker compose -f compose/docker-compose.yml config > /dev/null
+
+  plan-aws:
+    name: Terraform plan (AWS, optional)
+    runs-on: ubuntu-latest
+    needs: validate
+    # Only runs once the aws module exists and the repo variable opts in.
+    if: ${{ vars.ENABLE_AWS_PLAN == 'true' }}
+    permissions:
+      id-token: write # OIDC role assumption, no static keys
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Configure AWS credentials (OIDC)
+        if: ${{ secrets.AWS_ROLE_TO_ASSUME != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform init (aws)
+        run: terraform -chdir=terraform/aws init
+
+      - name: Terraform plan (aws)
+        run: terraform -chdir=terraform/aws plan -no-color
