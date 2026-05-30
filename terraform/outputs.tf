@@ -1,6 +1,7 @@
 output "servidor_ip_publica" {
-  value       = aws_instance.nuxt_server.public_ip
-  description = "IP publica de tu servidor para desplegar tu app Nuxt"
+  # Asegúrate de que "pokedex_server" o "nuxt_server" coincida con tu ec2.tf
+  value       = aws_instance.pokedex_server.public_ip
+  description = "IP pública de tu servidor para acceder a la Pokedex API"
 }
 
 output "ssh_conexion" {
