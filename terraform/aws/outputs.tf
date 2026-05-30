@@ -5,6 +5,6 @@ output "servidor_ip_publica" {
 }
 
 output "ssh_conexion" {
-  value       = "ssh -i ~/.ssh/id_rsa ubuntu@${aws_instance.nuxt_server.public_ip}"
+  value       = "ssh -i ~/.ssh/id_rsa ubuntu@${aws_instance.pokedex_server.public_ip}"
   description = "Comando rapido para conectarte a tu servidor por SSH"
 }
