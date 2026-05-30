@@ -15,11 +15,11 @@ data "aws_ami" "ubuntu" {
 # 2. Configurar par de llaves SSH de forma dinámica
 resource "aws_key_pair" "deployer" {
   key_name   = "${var.proyecto_nombre}-key"
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = var.ssh_public_key # file("~/.ssh/id_rsa.pub")
 }
 
 # 3. Crear la instancia EC2 configurada para Docker y Just
-resource "aws_instance" "nuxt_server" {
+resource "aws_instance" "pokedex_server" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instancia_tipo
   subnet_id              = aws_subnet.public.id
