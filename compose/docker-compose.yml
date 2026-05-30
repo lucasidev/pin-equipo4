@@ -12,9 +12,10 @@ services:
       - mongo_data:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
+      start_period: 15s
 
   redis:
     image: redis:7-alpine
@@ -24,9 +25,10 @@ services:
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--no-auth-warning", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   api:
     image: ghcr.io/lucasidev/pokedex-api:latest
@@ -55,10 +57,10 @@ services:
       CORS_ORIGIN: http://localhost:8080
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 10s
+      retries: 5
+      start_period: 15s
     ports:
       - "${API_HOST_PORT:-3000}:3000"
 
@@ -70,6 +72,12 @@ services:
         condition: service_healthy
     environment:
       BACKEND_URL: http://api:3000
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     ports:
       - "${WEB_HOST_PORT:-8080}:80"
 

@@ -25,10 +25,11 @@ resource "docker_container" "mongo" {
   }
 
   healthcheck {
-    test     = ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
-    interval = "5s"
-    timeout  = "5s"
-    retries  = 10
+    test         = ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+    interval     = "10s"
+    timeout      = "5s"
+    retries      = 5
+    start_period = "15s"
   }
 }
 
@@ -50,10 +51,11 @@ resource "docker_container" "redis" {
   }
 
   healthcheck {
-    test     = ["CMD", "redis-cli", "-a", var.redis_password, "--no-auth-warning", "ping"]
-    interval = "5s"
-    timeout  = "3s"
-    retries  = 10
+    test         = ["CMD", "redis-cli", "-a", var.redis_password, "--no-auth-warning", "ping"]
+    interval     = "10s"
+    timeout      = "5s"
+    retries      = 5
+    start_period = "15s"
   }
 }
 
@@ -93,10 +95,10 @@ resource "docker_container" "api" {
 
   healthcheck {
     test         = ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
-    interval     = "5s"
+    interval     = "10s"
     timeout      = "5s"
-    retries      = 12
-    start_period = "10s"
+    retries      = 5
+    start_period = "15s"
   }
 
   depends_on = [docker_container.mongo, docker_container.redis]
@@ -117,6 +119,14 @@ resource "docker_container" "web" {
   networks_advanced {
     name    = docker_network.pin.name
     aliases = ["web"]
+  }
+
+  healthcheck {
+    test         = ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+    interval     = "10s"
+    timeout      = "5s"
+    retries      = 5
+    start_period = "15s"
   }
 
   depends_on = [docker_container.api]

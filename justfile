@@ -11,16 +11,21 @@ default:
 # Stack (docker compose)
 # ═══════════════════════════════════════════════════════════════
 
+# Pick free host ports and write them to compose/.env, so `up` never
+# crashes on "port already allocated" when another project holds a default.
+ensure-ports:
+    node scripts/ensure-ports.mjs
+
 # Pull images and start the full stack (api, web, mongo, redis,
-# prometheus, grafana).
-up:
+# prometheus, grafana). Resolves host ports first.
+up: ensure-ports
     {{compose}} up -d
 
 down:
     {{compose}} down
 
 # Wipe volumes too (DESTRUCTIVE: loses mongo/redis/grafana data).
-reset:
+reset: ensure-ports
     {{compose}} down -v
     {{compose}} up -d
 
@@ -66,10 +71,3 @@ tf-fmt:
 
 tf-validate:
     terraform -chdir=terraform/local validate
-
-# ═══════════════════════════════════════════════════════════════
-# Security
-# ═══════════════════════════════════════════════════════════════
-
-sbom:
-    {{engine}} sbom --version >/dev/null 2>&1 || true
