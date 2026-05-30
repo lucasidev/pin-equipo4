@@ -51,7 +51,7 @@ services:
       POKEAPI_BASE_URL: https://pokeapi.co/api/v2
       POKEAPI_CACHE_TTL_SECONDS: "3600"
       RATE_LIMIT_WINDOW_MS: "60000"
-      RATE_LIMIT_MAX: "120"
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-120}
       CORS_ORIGIN: http://localhost:8080
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
@@ -109,6 +109,8 @@ services:
         condition: service_healthy
     environment:
       BASE_URL: http://api:3000
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     volumes:
       - ../k6:/scripts:ro
     command: ["run", "/scripts/load-test.js"]
