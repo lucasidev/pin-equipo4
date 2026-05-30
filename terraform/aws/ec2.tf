@@ -13,7 +13,6 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_key_pair" "deployer" {
-<<<<<<< HEAD
   key_name   = "${var.project_name}-key"
   public_key = var.ssh_public_key
 }
@@ -22,13 +21,6 @@ resource "aws_key_pair" "deployer" {
 # written here mirrors compose/docker-compose.yml: mongo + redis with auth,
 # and the api wired with the full env it requires at boot (JWT, admin seed,
 # connection strings). Secrets come from terraform variables, not hardcoded.
-=======
-  key_name   = "${var.proyecto_nombre}-key"
-  public_key = var.ssh_public_key # file("~/.ssh/id_rsa.pub")
-}
-
-# 3. Crear la instancia EC2 configurada para Docker y Just
->>>>>>> 1fd5e1a (Resolviendo error con clave ssh y nombre de recurso EC2)
 resource "aws_instance" "pokedex_server" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
