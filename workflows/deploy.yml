@@ -1,0 +1,95 @@
+name: "CI/CD: Infraestructura y Frontend Angular"
+
+# El pipeline se dispara al hacer push a la rama main o al abrir un Pull Request
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Permisos mínimos necesarios para el entorno de ejecución
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # =========================================================
+  # TRABAJO 1: GESTIÓN DE INFRAESTRUCTURA (Terraform)
+  # =========================================================
+  infraestructura:
+    name: "Aprovisionamiento con Terraform"
+    runs-on: ubuntu-latest
+    
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: "us-east-1"
+
+    steps:
+      - name: Clonar código del repositorio
+        uses: actions/checkout@v4
+
+      # CAMBIO CLAVE: Usamos la acción oficial de HashiCorp para Terraform
+      - name: Instalar y configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0" # Versión estable y recomendada de Terraform
+
+      - name: Validar formato del código
+        run: terraform -chdir=terraform fmt -check
+
+      - name: Inicializar Terraform (Descarga de proveedores)
+        run: terraform -chdir=terraform init
+
+      - name: Validar sintaxis de Terraform
+        run: terraform -chdir=terraform validate
+
+      - name: Planificar cambios (Terraform Plan)
+        if: github.event_name == 'pull_request'
+        run: terraform -chdir=terraform plan
+
+      - name: Aplicar cambios en AWS (Terraform Apply)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform -chdir=terraform apply -auto-approve
+
+  # =========================================================
+  # TRABAJO 2: COMPILACIÓN Y DESPLIEGUE DE LA APP (Angular)
+  # =========================================================
+  frontend:
+    name: "Compilación y Despliegue de Angular"
+    runs-on: ubuntu-latest
+    needs: infraestructura
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Clonar código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js (Entorno para Angular)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # PASO DE SEGURIDAD 1: Validar vulnerabilidades conocidas antes de operar
+      - name: Auditoría de seguridad en dependencias
+        run: npm audit --audit-level=high
+
+      # PASO DE SEGURIDAD 2: Bloquear ejecución de postscripts maliciosos
+      - name: Instalar dependencias de Angular de forma segura
+        run: npm ci --ignore-scripts
+
+      # Nota: Algunas apps de Angular necesitan compilar herramientas nativas en este punto.
+      # Si el build falla por culpa del '--ignore-scripts', se evalúa qué paquete lo requiere 
+      # y se ejecuta selectivamente, pero nunca a ciegas para todo el repositorio.
+      - name: Compilar aplicación Angular
+        run: npm run build -- --configuration=production
+
+      # PASO DE SEGURIDAD 3: Inyectar credenciales SOLO en el paso final y no en todo el entorno
+      - name: Sincronizar archivos estáticos a S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: |
+          aws s3 sync dist/*/browser s3://mi-app-angular-semillero-devops --delete
