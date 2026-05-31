@@ -28,6 +28,12 @@ resource "aws_instance" "pokedex_server" {
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   key_name               = aws_key_pair.deployer.key_name
 
+  # Intentional: this is a public demo host. HTTP (80) and the API (3000)
+  # are reachable from the internet via the security group; SSH stays
+  # limited to var.admin_cidr. Declared explicitly so the public exposure
+  # is a reviewed decision, not an implicit default.
+  associate_public_ip_address = true
+
   user_data = <<-EOF
               #!/bin/bash
               set -euo pipefail
