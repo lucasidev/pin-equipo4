@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 name: CI
 
 on:
@@ -6,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+
   # CLAVE: Esto permite que aparezca un botón para disparar el flujo manualmente en GitHub
   workflow_dispatch:
     inputs:
@@ -13,7 +13,6 @@ on:
         description: 'Escribe "DESTROY" para confirmar la eliminación de la infraestructura'
         required: true
         default: 'NO'
-
 permissions:
   contents: read
 
@@ -21,10 +20,40 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# CLAVE: Aquí agrupamos todos los trabajos del pipeline de forma correcta
+
 jobs:
 
   # =========================================================
   # TRABAJO 1: VALIDACIÓN ESTÁTICA
+  # =========================================================
+  validate:
+    name: Validate infra (terraform + compose)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Validar formato del código
+        run: terraform -chdir=terraform/aws fmt -check
+
+      - name: Inicializar Terraform (Validación Local)
+        run: terraform -chdir=terraform/aws init -backend=false
+
+       Tarjeta de control: Verifica que la lógica estructural esté limpia
+      - name: Validar sintaxis de los archivos .tf
+        run: terraform -chdir=terraform/aws validate
+
+      - name: Validate docker compose
+        run: docker compose -f compose/docker-compose.yml config > /dev/null
+
+  # =========================================================
+  # TRABAJO 2: PLANIFICACIÓN EN AWS (Fase CI - Pull Requests)
   # =========================================================
   validate:
     name: Validate infra (terraform + compose)
@@ -40,6 +69,7 @@ jobs:
         with:
           terraform_version: "1.9.8"
 
+
       - name: Validar formato del código
         run: terraform -chdir=terraform/aws fmt -check
 
@@ -49,8 +79,6 @@ jobs:
       - name: Validar sintaxis de los archivos .tf
         run: terraform -chdir=terraform/aws validate
 
-<<<<<<< HEAD
-=======
       # Fase CI: Se ejecuta en Pull Requests e inyecta la llave SSH para el Plan
       - name: Planificar cambios (Terraform Plan)
         if: github.event_name == 'pull_request'
@@ -64,26 +92,18 @@ jobs:
         env:
           TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }} # <-- Inyección de seguridad
         run: terraform -chdir=terraform/aws apply -auto-approve
->>>>>>> 1fd5e1a (Resolviendo error con clave ssh y nombre de recurso EC2)
       - name: Validate docker compose
         run: docker compose -f compose/docker-compose.yml config > /dev/null
 
   # =========================================================
   # TRABAJO 2: PLANIFICACIÓN EN AWS (Fase CI - Pull Requests)
-=======
-  # =========================================================
-  # TRABAJO 2: PLANIFICACIÓN EN AWS (Usa llaves estáticas de tus Secrets)
->>>>>>> d55b40e (ci: pipeline completo con autenticacion estatica de aws y despliegue docker)
   # =========================================================
   plan-aws:
     name: Terraform plan (AWS)
     runs-on: ubuntu-latest
     needs: validate
-<<<<<<< HEAD
+
     if: github.event_name == 'pull_request' && github.event.inputs.confirm_destroy != 'DESTROY'
-=======
-    if: github.event_name == 'pull_request'
->>>>>>> d55b40e (ci: pipeline completo con autenticacion estatica de aws y despliegue docker)
     steps:
       - uses: actions/checkout@v6
 
@@ -91,11 +111,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.9.8"
-
-<<<<<<< HEAD
-=======
       # Reemplazamos la acción compleja de OIDC por la inyección directa de tus llaves
->>>>>>> d55b40e (ci: pipeline completo con autenticacion estatica de aws y despliegue docker)
       - name: Terraform init (aws)
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -112,21 +128,14 @@ jobs:
         run: terraform -chdir=terraform/aws plan -no-color
 
   # =========================================================
-<<<<<<< HEAD
   # TRABAJO 3: DESPLIEGUE EN AWS (Fase CD - Push a Main)
-=======
-  # TRABAJO 3: DESPLIEGUE EN AWS (Usa llaves estáticas de tus Secrets)
->>>>>>> d55b40e (ci: pipeline completo con autenticacion estatica de aws y despliegue docker)
   # =========================================================
   apply-aws:
     name: Terraform apply (AWS)
     runs-on: ubuntu-latest
     needs: validate
-<<<<<<< HEAD
+
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.inputs.confirm_destroy != 'DESTROY'
-=======
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
->>>>>>> d55b40e (ci: pipeline completo con autenticacion estatica de aws y despliegue docker)
     steps:
       - uses: actions/checkout@v6
 
@@ -149,7 +158,7 @@ jobs:
           AWS_DEFAULT_REGION: "us-east-1"
           TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
         run: terraform -chdir=terraform/aws apply -auto-approve
-<<<<<<< HEAD
+
 
   # =========================================================
   # TRABAJO 4: DESTRUCCIÓN SEGURA DE INFRAESTRUCTURA (Manual)
@@ -181,5 +190,3 @@ jobs:
           AWS_DEFAULT_REGION: "us-east-1"
           TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
         run: terraform -chdir=terraform/aws destroy -auto-approve
-=======
->>>>>>> d55b40e (ci: pipeline completo con autenticacion estatica de aws y despliegue docker)

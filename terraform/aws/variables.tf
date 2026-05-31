@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 variable "aws_region" {
   description = "AWS region to deploy into."
   type        = string
@@ -78,9 +77,3 @@ variable "admin_password" {
     error_message = "admin_password must be at least 8 characters (enforced by the api at boot)."
   }
 }
-=======
-variable "ssh_public_key" {
-  type        = string
-  description = "Contenido de la clave pública SSH para inyectar al servidor EC2"
-}
->>>>>>> 1fd5e1a (Resolviendo error con clave ssh y nombre de recurso EC2)
