@@ -14,13 +14,14 @@ Medir y visualizar el comportamiento de la API en tiempo real:
 
 ## Estructura
 
-- [`prometheus/prometheus.yml`](/home/pepe/proyectos/pin-equipo4/observability/prometheus/prometheus.yml)
+- [`prometheus/prometheus.yml`](prometheus/prometheus.yml)
   - Configuracion de scrapes.
-- [`grafana/provisioning/datasources/datasource.yml`](/home/pepe/proyectos/pin-equipo4/observability/grafana/provisioning/datasources/datasource.yml)
+- [`grafana/provisioning/datasources/datasource.yml`](grafana/provisioning/datasources/datasource.yml)
   - Datasource Prometheus provisionado automaticamente.
-- [`grafana/provisioning/dashboards/dashboards.yml`](/home/pepe/proyectos/pin-equipo4/observability/grafana/provisioning/dashboards/dashboards.yml)
+- [`grafana/provisioning/dashboards/dashboards.yml`](grafana/provisioning/dashboards/dashboards.yml)
   - Provider de dashboards por archivo.
-- [`grafana/dashboards/pokedex-api.json`](/home/pepe/proyectos/pin-equipo4/observability/grafana/dashboards/pokedex-api.json)
+- [`grafana/dashboards/pokedex-api.json`](grafana/dashboards/pokedex-api.json)
+
   - Dashboard principal de la API.
 
 ## Como funciona el flujo completo

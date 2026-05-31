@@ -14,7 +14,7 @@ El test verifica que la API:
 
 ## Archivo principal
 
-- [`load-test.js`](/home/pepe/proyectos/pin-equipo4/k6/load-test.js)
+- [`load-test.js`](load-test.js)
 
 ## Que hace el escenario
 
