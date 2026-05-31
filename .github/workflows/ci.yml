@@ -31,6 +31,8 @@ jobs:
     name: Validate infra (terraform + compose)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # No corremos validación si la intención explícita es destruir todo
+    if: github.event.inputs.confirm_destroy != 'DESTROY'
     steps:
       - uses: actions/checkout@v6
 
@@ -45,7 +47,6 @@ jobs:
       - name: Inicializar Terraform (Validación Local)
         run: terraform -chdir=terraform/aws init -backend=false
 
-      # PASO CORREGIDO: Ahora sí es un comentario YAML válido
       - name: Validar sintaxis de los archivos .tf
         run: terraform -chdir=terraform/aws validate
 
@@ -134,7 +135,6 @@ jobs:
     name: Terraform apply (AWS)
     runs-on: ubuntu-latest
     needs: validate
-
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.inputs.confirm_destroy != 'DESTROY'
     steps:
       - uses: actions/checkout@v6
@@ -158,7 +158,6 @@ jobs:
           AWS_DEFAULT_REGION: "us-east-1"
           TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
         run: terraform -chdir=terraform/aws apply -auto-approve
-
 
   # =========================================================
   # TRABAJO 4: DESTRUCCIÓN SEGURA DE INFRAESTRUCTURA (Manual)
