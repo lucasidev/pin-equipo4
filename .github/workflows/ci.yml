@@ -5,7 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # CLAVE: Esto permite que aparezca un botón para disparar el flujo manualmente en GitHub
   workflow_dispatch:
+    inputs:
+      confirm_destroy:
+        description: 'Escribe "DESTROY" para confirmar la eliminación de la infraestructura'
+        required: true
+        default: 'NO'
 
 permissions:
   contents: read
@@ -15,57 +21,125 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
+  # =========================================================
+  # TRABAJO 1: VALIDACIÓN ESTÁTICA
+  # =========================================================
   validate:
     name: Validate infra (terraform + compose)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # No corremos validación si la intención explícita es destruir todo
+    if: github.event.inputs.confirm_destroy != 'DESTROY'
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@v6
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.9.8"
 
-      - name: Terraform fmt (check)
-        run: terraform fmt -check -recursive terraform
+      - name: Validar formato del código
+        run: terraform -chdir=terraform/aws fmt -check
 
-      - name: Terraform init (local, no backend)
-        run: terraform -chdir=terraform/local init -backend=false
+      - name: Inicializar Terraform (Validación Local)
+        run: terraform -chdir=terraform/aws init -backend=false
 
-      - name: Terraform validate (local)
-        run: terraform -chdir=terraform/local validate
+      - name: Validar sintaxis de los archivos .tf
+        run: terraform -chdir=terraform/aws validate
 
       - name: Validate docker compose
         run: docker compose -f compose/docker-compose.yml config > /dev/null
 
+  # =========================================================
+  # TRABAJO 2: PLANIFICACIÓN EN AWS (Fase CI - Pull Requests)
+  # =========================================================
   plan-aws:
-    name: Terraform plan (AWS, optional)
+    name: Terraform plan (AWS)
     runs-on: ubuntu-latest
     needs: validate
-    # Only runs once the aws module exists and the repo variable opts in.
-    if: ${{ vars.ENABLE_AWS_PLAN == 'true' }}
-    permissions:
-      id-token: write # OIDC role assumption, no static keys
-      contents: read
+    if: github.event_name == 'pull_request' && github.event.inputs.confirm_destroy != 'DESTROY'
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@v6
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.9.8"
 
-      - name: Configure AWS credentials (OIDC)
-        # This job is already gated by vars.ENABLE_AWS_PLAN.
-        # If enabled, AWS_ROLE_TO_ASSUME and AWS_REGION must be configured.
-        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
       - name: Terraform init (aws)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
         run: terraform -chdir=terraform/aws init
 
       - name: Terraform plan (aws)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
         run: terraform -chdir=terraform/aws plan -no-color
+
+  # =========================================================
+  # TRABAJO 3: DESPLIEGUE EN AWS (Fase CD - Push a Main)
+  # =========================================================
+  apply-aws:
+    name: Terraform apply (AWS)
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.inputs.confirm_destroy != 'DESTROY'
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Terraform init (aws)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: terraform -chdir=terraform/aws init
+
+      - name: Terraform apply (aws)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+        run: terraform -chdir=terraform/aws apply -auto-approve
+
+  # =========================================================
+  # TRABAJO 4: DESTRUCCIÓN SEGURA DE INFRAESTRUCTURA (Manual)
+  # =========================================================
+  destroy-aws:
+    name: Terraform destroy (AWS)
+    runs-on: ubuntu-latest
+    # Solo corre si lo disparas manualmente Y escribes la palabra de confirmación exacta
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_destroy == 'DESTROY'
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Terraform init (aws)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        run: terraform -chdir=terraform/aws init
+
+      - name: Ejecutar destrucción completa
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+        run: terraform -chdir=terraform/aws destroy -auto-approve
