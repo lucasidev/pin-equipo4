@@ -15,7 +15,6 @@ grafana_admin_password = "change-me"
 # grafana_admin_user   = "admin"
 # rate_limit_max       = 120   # raise to e.g. 2000 for load testing
 # api_host_port        = 3000
-# web_host_port        = 8080
 # prometheus_host_port = 9090
 # grafana_host_port    = 3001
 
