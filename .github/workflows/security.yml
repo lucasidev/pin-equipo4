@@ -20,17 +20,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@v4
 
       - name: Generate SBOM from source tree
-        uses: anchore/sbom-action@db16fd06d7be945880bc83b60909953bb96f0d22 # v0
+        uses: anchore/sbom-action@v0
         with:
           path: .
           format: cyclonedx-json
           output-file: sbom.cyclonedx.json
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        uses: actions/upload-artifact@v4
         with:
           name: sbom-cyclonedx
           path: sbom.cyclonedx.json
@@ -47,10 +47,10 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@v4
 
       - name: Run Snyk IaC test
-        uses: snyk/actions/iac@b7f0fdc3e4e4bf2f0a947f5f0b2b9b40e57f4c8e # master
+        uses: snyk/actions/iac@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -58,7 +58,7 @@ jobs:
 
       - name: Upload Snyk SARIF
         if: always() && hashFiles('snyk.sarif') != ''
-        uses: github/codeql-action/upload-sarif@c2a71d5e642ac93806772b438a2855f6ea8f3e1a # v3
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk.sarif
 
@@ -69,11 +69,11 @@ jobs:
     # Enable with repository variable ENABLE_SONAR=true
     if: ${{ vars.ENABLE_SONAR == 'true' }}
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@f99616c0b4d5deced9f1f46f87e68f236abfa147 # v5
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
