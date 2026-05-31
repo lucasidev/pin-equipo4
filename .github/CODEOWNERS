@@ -1,0 +1,7 @@
+# Code owners for pin-equipo4.
+#
+# Every change to main requires a review from the owner listed here. Combined
+# with branch protection ("require review from Code Owners"), this means no PR
+# merges without @lucasidev's approval, regardless of who opened it.
+
+* @lucasidev
