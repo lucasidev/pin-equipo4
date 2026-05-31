@@ -31,7 +31,6 @@ terraform apply
 
 | Output | Default |
 |---|---|
-| web_url | http://localhost:8080 |
 | api_url | http://localhost:3000/api |
 | api_metrics_url | http://localhost:3000/metrics |
 | prometheus_url | http://localhost:9090 |
