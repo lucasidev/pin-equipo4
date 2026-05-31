@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -44,6 +43,9 @@ jobs:
     timeout-minutes: 10
     # Enable with repository variable ENABLE_SNYK=true
     if: ${{ vars.ENABLE_SNYK == 'true' }}
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
 
