@@ -53,7 +53,9 @@ export default function (data) {
   const welcome = http.get(`${BASE}/api`);
   check(welcome, { "welcome 200": (r) => r.status === 200 });
 
-  const name = POKEMON[Math.floor(Math.random() * POKEMON.length)];
+  // Cycle through the pool deterministically (per VU + iteration) for even
+  // coverage; no PRNG needed for a fixed list.
+  const name = POKEMON[(__VU + __ITER) % POKEMON.length];
   const pokemon = http.get(`${BASE}/api/pokemon/${name}`, authHeaders);
   check(pokemon, { "pokemon 200": (r) => r.status === 200 });
 
