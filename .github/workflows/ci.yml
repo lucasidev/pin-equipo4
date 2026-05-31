@@ -5,14 +5,14 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-
-  # CLAVE: Esto permite que aparezca un botón para disparar el flujo manualmente en GitHub
+  # Permite disparar la destrucción manual desde la interfaz web de GitHub
   workflow_dispatch:
     inputs:
       confirm_destroy:
         description: 'Escribe "DESTROY" para confirmar la eliminación de la infraestructura'
         required: true
         default: 'NO'
+
 permissions:
   contents: read
 
@@ -20,18 +20,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# CLAVE: Aquí agrupamos todos los trabajos del pipeline de forma correcta
-
 jobs:
 
   # =========================================================
-  # TRABAJO 1: VALIDACIÓN ESTÁTICA
+  # TRABAJO 1: VALIDACIÓN ESTÁTICA LOCAL
   # =========================================================
   validate:
     name: Validate infra (terraform + compose)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # No corremos validación si la intención explícita es destruir todo
+    # No corre validaciones si tu intención explícita es destruir todo el entorno
     if: github.event.inputs.confirm_destroy != 'DESTROY'
     steps:
       - uses: actions/checkout@v6
@@ -50,49 +48,6 @@ jobs:
       - name: Validar sintaxis de los archivos .tf
         run: terraform -chdir=terraform/aws validate
 
-      - name: Validate docker compose
-        run: docker compose -f compose/docker-compose.yml config > /dev/null
-
-  # =========================================================
-  # TRABAJO 2: PLANIFICACIÓN EN AWS (Fase CI - Pull Requests)
-  # =========================================================
-  validate:
-    name: Validate infra (terraform + compose)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    # No corremos validación si la intención explícita es destruir todo
-    if: github.event.inputs.confirm_destroy != 'DESTROY'
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.9.8"
-
-
-      - name: Validar formato del código
-        run: terraform -chdir=terraform/aws fmt -check
-
-      - name: Inicializar Terraform (Validación Local)
-        run: terraform -chdir=terraform/aws init -backend=false
-
-      - name: Validar sintaxis de los archivos .tf
-        run: terraform -chdir=terraform/aws validate
-
-      # Fase CI: Se ejecuta en Pull Requests e inyecta la llave SSH para el Plan
-      - name: Planificar cambios (Terraform Plan)
-        if: github.event_name == 'pull_request'
-        env:
-          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }} # <-- Inyección de seguridad
-        run: terraform -chdir=terraform/aws plan
-
-      # Fase CD: Se ejecuta al fusionar en main e inyecta la llave SSH para el Apply
-      - name: Aplicar cambios en AWS (Terraform Apply)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        env:
-          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }} # <-- Inyección de seguridad
-        run: terraform -chdir=terraform/aws apply -auto-approve
       - name: Validate docker compose
         run: docker compose -f compose/docker-compose.yml config > /dev/null
 
@@ -103,7 +58,6 @@ jobs:
     name: Terraform plan (AWS)
     runs-on: ubuntu-latest
     needs: validate
-
     if: github.event_name == 'pull_request' && github.event.inputs.confirm_destroy != 'DESTROY'
     steps:
       - uses: actions/checkout@v6
@@ -112,7 +66,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.9.8"
-      # Reemplazamos la acción compleja de OIDC por la inyección directa de tus llaves
+
       - name: Terraform init (aws)
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -135,7 +89,7 @@ jobs:
     name: Terraform apply (AWS)
     runs-on: ubuntu-latest
     needs: validate
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event.inputs.confirm_destroy != 'DESTROY'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.event_name.inputs.confirm_destroy != 'DESTROY'
     steps:
       - uses: actions/checkout@v6
 
@@ -165,7 +119,7 @@ jobs:
   destroy-aws:
     name: Terraform destroy (AWS)
     runs-on: ubuntu-latest
-    # Solo corre si lo disparas manualmente Y escribes la palabra de confirmación exacta
+    # Solo se activa si ejecutas el flujo manualmente y digitas la palabra exacta
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm_destroy == 'DESTROY'
     steps:
       - uses: actions/checkout@v6
