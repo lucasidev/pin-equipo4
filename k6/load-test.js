@@ -4,7 +4,9 @@ import { check, sleep } from "k6";
 // BASE_URL points at the api service inside the compose network by default.
 const BASE = __ENV.BASE_URL || "http://localhost:3000";
 const ADMIN_EMAIL = __ENV.ADMIN_EMAIL || "admin@pokedex.local";
-const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD || "changeme12345";
+// No default for the password: it is injected from compose/.env. Failing
+// loud beats shipping a hard-coded credential in the script.
+const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD;
 
 // A small pool so the first hit of each name is a cache miss (PokeAPI
 // fetch) and the rest are cache hits, exercising the Redis-backed proxy
@@ -36,6 +38,9 @@ export const options = {
 // hand the token to every VU so the JWT-protected pokemon routes (and thus
 // the Redis cache metrics) are actually exercised.
 export function setup() {
+  if (!ADMIN_PASSWORD) {
+    throw new Error("ADMIN_PASSWORD is required (set it in compose/.env).");
+  }
   const res = http.post(
     `${BASE}/api/auth/signin`,
     JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }),
