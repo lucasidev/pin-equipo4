@@ -1,4 +1,4 @@
-# 1. Obtener la AMI de Ubuntu LTS más reciente
+# Latest Ubuntu 22.04 LTS AMI from Canonical.
 data "aws_ami" "ubuntu" {
   most_recent = true
   filter {
@@ -12,91 +12,84 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-# 2. Configurar par de llaves SSH de forma dinámica
 resource "aws_key_pair" "deployer" {
-  key_name   = "${var.proyecto_nombre}-key"
-  public_key = var.ssh_public_key # file("~/.ssh/id_rsa.pub")
+  key_name   = "${var.project_name}-key"
+  public_key = var.ssh_public_key
 }
 
-# 3. Crear la instancia EC2 configurada para Docker y Just
+# Bootstraps Docker and brings up the stack via user_data. The compose file
+# written here mirrors compose/docker-compose.yml: mongo + redis with auth,
+# and the api wired with the full env it requires at boot (JWT, admin seed,
+# connection strings). Secrets come from terraform variables, not hardcoded.
 resource "aws_instance" "pokedex_server" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instancia_tipo
+  instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
   key_name               = aws_key_pair.deployer.key_name
 
-  # Script de automatización DevSecOps para entornos Dockerificados
   user_data = <<-EOF
               #!/bin/bash
-              # Evitar interrupciones de prompts interactivos en Ubuntu
+              set -euo pipefail
               export DEBIAN_FRONTEND=noninteractive
 
-              # Actualizar sistema e instalar pre-requisitos
-              sudo apt-get update -y
-              sudo apt-get install -y curl git apt-transport-https ca-certificates gnupg lsb-release
+              apt-get update -y
+              apt-get install -y ca-certificates curl gnupg
 
-              # ==========================================
-              # INSTALACIÓN OFICIAL DE DOCKER & COMPOSE
-              # ==========================================
-              sudo mkdir -p /etc/apt/keyrings
-              curl -fsSL https://docker.com | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-              
-              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://docker.com $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.p/docker.list > /dev/null
-              
-              sudo apt-get update -y
-              sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+              # Official Docker repository + engine with the compose plugin.
+              install -m 0755 -d /etc/apt/keyrings
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+              chmod a+r /etc/apt/keyrings/docker.gpg
+              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+              apt-get update -y
+              apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+              usermod -aG docker ubuntu
 
-              # Configurar permisos para ejecutar docker sin sudo
-              sudo usermod -aG docker ubuntu
-
-              # ==========================================
-              # INSTALACIÓN DE JUST (Runner de tareas)
-              # ==========================================
-              # Descargar el instalador oficial de Just y agregarlo a binarios globales
-              curl --proto '=https' --tlsv1.2 -sSf https://just.systems | sudo bash -s -- --to /usr/local/bin
-
-              # ==========================================
-              # PREPARACIÓN DEL ENTORNO DE LA APLICACIÓN
-              # ==========================================
               mkdir -p /home/ubuntu/app
-              chown -R ubuntu:ubuntu /home/ubuntu/app
-
-              # Nota de Arquitectura: La imagen 'pokedex-api' requiere Mongo y Redis.
-              # Creamos un docker-compose base automatizado para que el semillero no falle.
-              cat << 'INNER_EOF' > /home/ubuntu/app/docker-compose.yml
-              version: '3.8'
-
+              cat > /home/ubuntu/app/docker-compose.yml <<'INNER_EOF'
+              name: pokedex
               services:
-                mongodb:
-                  image: mongo:latest
-                  ports:
-                    - "27017:27017"
+                mongo:
+                  image: mongo:7
+                  restart: unless-stopped
+                  environment:
+                    MONGO_INITDB_ROOT_USERNAME: ${var.mongo_root_user}
+                    MONGO_INITDB_ROOT_PASSWORD: ${var.mongo_root_password}
+                    MONGO_INITDB_DATABASE: pokedex
                   volumes:
                     - mongo_data:/data/db
 
                 redis:
-                  image: redis:alpine
-                  ports:
-                    - "6379:6379"
+                  image: redis:7-alpine
+                  restart: unless-stopped
+                  command: ["redis-server", "--requirepass", "${var.redis_password}"]
 
-                pokedex-api:
-                  image: ghcr.io/lucasidev/pokedex-api:sha256-6a07f1d8597f2521853d949ac2a757b5ebf79dcce35b56aa7c4136802b4bc4a1.sig
+                api:
+                  image: ${var.api_image}
+                  restart: unless-stopped
+                  depends_on:
+                    - mongo
+                    - redis
+                  environment:
+                    NODE_ENV: production
+                    PORT: "3000"
+                    MONGODB_URI: mongodb://${var.mongo_root_user}:${var.mongo_root_password}@mongo:27017/pokedex?authSource=admin
+                    REDIS_URL: redis://:${var.redis_password}@redis:6379
+                    JWT_SECRET: ${var.jwt_secret}
+                    JWT_EXPIRES_IN: 1h
+                    ADMIN_EMAIL: ${var.admin_email}
+                    ADMIN_PASSWORD: ${var.admin_password}
+                    CORS_ORIGIN: http://localhost:3000
                   ports:
                     - "3000:3000"
-                  environment:
-                    - MONGODB_URI=mongodb://mongodb:27017/pokedex
-                    - REDIS_URL=redis://redis:6379
-                  depends_on:
-                    - mongodb
-                    - redis
-              
+
               volumes:
                 mongo_data:
               INNER_EOF
 
-              chown ubuntu:ubuntu /home/ubuntu/app/docker-compose.yml
+              chown -R ubuntu:ubuntu /home/ubuntu/app
+              cd /home/ubuntu/app && docker compose up -d
               EOF
 
-  tags = { Name = "${var.proyecto_nombre}-server" }
+  tags = { Name = "${var.project_name}-server" }
 }

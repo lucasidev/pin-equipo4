@@ -1,31 +1,30 @@
-# Crear la VPC
+# VPC with a single public subnet for the demo EC2 host.
+
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
-  tags                 = { Name = "${var.proyecto_nombre}-vpc" }
+  tags                 = { Name = "${var.project_name}-vpc" }
 }
 
-# Crear la Subred Pública
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true # Asigna IP pública automáticamente
-  tags                    = { Name = "${var.proyecto_nombre}-public-subnet" }
+  map_public_ip_on_launch = true
+  tags                    = { Name = "${var.project_name}-public-subnet" }
 }
 
-# Internet Gateway para conectar la VPC a internet
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
-  tags   = { Name = "${var.proyecto_nombre}-igw" }
+  tags   = { Name = "${var.project_name}-igw" }
 }
 
-# Tabla de Enrutamiento para la subred pública
 resource "aws_route_table" "public_rt" {
   vpc_id = aws_vpc.main.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.gw.id
   }
+  tags = { Name = "${var.project_name}-public-rt" }
 }
 
 resource "aws_route_table_association" "public_assoc" {
@@ -33,41 +32,44 @@ resource "aws_route_table_association" "public_assoc" {
   route_table_id = aws_route_table.public_rt.id
 }
 
-# Grupo de Seguridad (Firewall)
+# Firewall. HTTP/API are public (it is a public demo); SSH is restricted to
+# var.admin_cidr so the management port is not open to the whole internet.
 resource "aws_security_group" "web_sg" {
-  name        = "${var.proyecto_nombre}-web-sg"
-  description = "Permitir trafico HTTP, HTTPS, Nuxt y SSH"
+  name        = "${var.project_name}-web-sg"
+  description = "HTTP and API public; SSH limited to the admin CIDR"
   vpc_id      = aws_vpc.main.id
 
-  # HTTP
   ingress {
+    description = "HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Nuxt.js App Port
   ingress {
+    description = "Pokedex API"
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # SSH (Por seguridad en producción deberías limitarlo a tu IP)
   ingress {
+    description = "SSH (admin only)"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.admin_cidr]
   }
 
-  # Tráfico de salida permitido hacia cualquier lugar (Para descargar Node.js, npm, etc)
   egress {
+    description = "All outbound (package and image downloads)"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = { Name = "${var.project_name}-web-sg" }
 }

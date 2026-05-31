@@ -1,14 +1,14 @@
-variable "aws_region" {
-  type    = string
-  default = "us-east-1"
+terraform {
+  required_version = ">= 1.6"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
 }
 
-variable "proyecto_nombre" {
-  type    = string
-  default = "semillero-nuxt-app"
-}
-
-variable "instancia_tipo" {
-  type    = string
-  default = "t3.micro" # Económica y suficiente para prácticas
+provider "aws" {
+  region = var.aws_region
 }
