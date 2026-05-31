@@ -80,7 +80,7 @@ resource "docker_container" "api" {
     "POKEAPI_CACHE_TTL_SECONDS=3600",
     "RATE_LIMIT_WINDOW_MS=60000",
     "RATE_LIMIT_MAX=${var.rate_limit_max}",
-    "CORS_ORIGIN=http://localhost:${var.web_host_port}",
+    "CORS_ORIGIN=http://localhost:${var.api_host_port}",
   ]
 
   ports {
@@ -102,34 +102,6 @@ resource "docker_container" "api" {
   }
 
   depends_on = [docker_container.mongo, docker_container.redis]
-}
-
-resource "docker_container" "web" {
-  name    = "${var.network_name}-web"
-  image   = docker_image.web.image_id
-  restart = "unless-stopped"
-
-  env = ["BACKEND_URL=http://api:3000"]
-
-  ports {
-    internal = 80
-    external = var.web_host_port
-  }
-
-  networks_advanced {
-    name    = docker_network.pin.name
-    aliases = ["web"]
-  }
-
-  healthcheck {
-    test         = ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
-    interval     = "10s"
-    timeout      = "5s"
-    retries      = 5
-    start_period = "15s"
-  }
-
-  depends_on = [docker_container.api]
 }
 
 resource "docker_container" "prometheus" {

@@ -8,9 +8,9 @@
  * upward for the next free one. Resolved ports are written back into
  * compose/.env so compose, `just status`, and the README URLs all agree.
  *
- * Only the four host-published services are managed here. mongo and redis
- * are internal to the compose network (no host mapping), so they never
- * collide with the host.
+ * Only the host-published services are managed here. mongo and redis are
+ * internal to the compose network (no host mapping), so they never collide
+ * with the host.
  *
  * Usage:  node scripts/ensure-ports.mjs
  */
@@ -33,7 +33,6 @@ const PS_TIMEOUT_MS = 10_000;
 // first and reserve their port so later ones never reuse it.
 const SERVICES = [
   { key: "API_HOST_PORT", def: 3000 },
-  { key: "WEB_HOST_PORT", def: 8080 },
   { key: "PROMETHEUS_HOST_PORT", def: 9090 },
   { key: "GRAFANA_HOST_PORT", def: 3001 },
 ];
