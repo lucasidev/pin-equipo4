@@ -45,7 +45,7 @@ jobs:
       - name: Inicializar Terraform (Validación Local)
         run: terraform -chdir=terraform/aws init -backend=false
 
-       Tarjeta de control: Verifica que la lógica estructural esté limpia
+      # PASO CORREGIDO: Ahora sí es un comentario YAML válido
       - name: Validar sintaxis de los archivos .tf
         run: terraform -chdir=terraform/aws validate
 
