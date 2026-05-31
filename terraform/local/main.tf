@@ -39,11 +39,6 @@ resource "docker_image" "api" {
   keep_locally = true
 }
 
-resource "docker_image" "web" {
-  name         = var.web_image
-  keep_locally = true
-}
-
 resource "docker_image" "prometheus" {
   name         = var.prometheus_image
   keep_locally = true
