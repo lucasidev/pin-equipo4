@@ -2,6 +2,7 @@
 # Manual edits may be lost in future updates.
 
 provider "registry.terraform.io/hashicorp/aws" {
+<<<<<<< HEAD
   version     = "6.47.0"
   constraints = "~> 6.0"
   hashes = [
@@ -9,6 +10,11 @@ provider "registry.terraform.io/hashicorp/aws" {
     "h1:SMrvLnQWj7IG/TqGJ92uNNY3CQMhJ8l2vgyx4JotpnY=",
     "h1:cn19NQndVIksT44BCnFHnNak7f8EURsZmT5BNeDC5YE=",
     "h1:wLw15aMuMVgPS68hOj8B0IhJr9tMClHdpyIkucdNJ60=",
+=======
+  version = "6.47.0"
+  hashes = [
+    "h1:SMrvLnQWj7IG/TqGJ92uNNY3CQMhJ8l2vgyx4JotpnY=",
+>>>>>>> 1fd5e1a (Resolviendo error con clave ssh y nombre de recurso EC2)
     "zh:16379546c8b3ebcd6dfe6a5d6b69eb243202585fbd4786e1207bf97004b60799",
     "zh:2ab74c8cd808d1206e4885cbe54433d33b63a257a2ff6b177f6e10b367fabb26",
     "zh:2e5142d5b41ab2bf33e408c040c1540260508a5f2b3dedcda805749611d1c044",

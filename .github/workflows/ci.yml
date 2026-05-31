@@ -48,6 +48,22 @@ jobs:
       - name: Validar sintaxis de los archivos .tf
         run: terraform -chdir=terraform/aws validate
 
+<<<<<<< HEAD
+=======
+      # Fase CI: Se ejecuta en Pull Requests e inyecta la llave SSH para el Plan
+      - name: Planificar cambios (Terraform Plan)
+        if: github.event_name == 'pull_request'
+        env:
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }} # <-- Inyección de seguridad
+        run: terraform -chdir=terraform/aws plan
+
+      # Fase CD: Se ejecuta al fusionar en main e inyecta la llave SSH para el Apply
+      - name: Aplicar cambios en AWS (Terraform Apply)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }} # <-- Inyección de seguridad
+        run: terraform -chdir=terraform/aws apply -auto-approve
+>>>>>>> 1fd5e1a (Resolviendo error con clave ssh y nombre de recurso EC2)
       - name: Validate docker compose
         run: docker compose -f compose/docker-compose.yml config > /dev/null
 
