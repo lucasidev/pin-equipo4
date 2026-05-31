@@ -20,12 +20,6 @@ variable "api_image" {
   default     = "ghcr.io/lucasidev/pokedex-api:latest"
 }
 
-variable "web_image" {
-  description = "pokedex-web image reference."
-  type        = string
-  default     = "ghcr.io/lucasidev/pokedex-web:latest"
-}
-
 variable "mongo_image" {
   description = "MongoDB image."
   type        = string
@@ -135,12 +129,6 @@ variable "api_host_port" {
   description = "Host port mapped to the api container."
   type        = number
   default     = 3000
-}
-
-variable "web_host_port" {
-  description = "Host port mapped to the web container."
-  type        = number
-  default     = 8080
 }
 
 variable "prometheus_host_port" {
