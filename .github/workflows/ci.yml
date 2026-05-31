@@ -85,8 +85,7 @@ jobs:
           TF_VAR_jwt_secret: ${{secrets.JWT_SECRET}}
           TF_VAR_redis_password: ${{secrets.REDIS_PASSWORD}}
           TF_VAR_mongo_root_password: ${{secrets.MONGO_ROOT_PASSWORD}}
-          TF_VAR_ssh_public_key: ${{secrets.SSH_PUBLIC_KEY}}
-        run: terraform -chdir=terraform/aws plan -no-color
+\        run: terraform -chdir=terraform/aws plan -no-color
 
   # =========================================================
   # TRABAJO 3: DESPLIEGUE EN AWS (Fase CD - Push a Main)
