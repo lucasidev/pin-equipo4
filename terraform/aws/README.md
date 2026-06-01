@@ -7,8 +7,10 @@ a VPC with a public subnet, a security group, and one EC2 instance that boots
 the stack (mongo, redis, api) via `user_data`.
 
 The instance self-configures on first boot: it installs Docker and writes a
-`docker-compose.yml` inline that mirrors `compose/docker-compose.yml`. Secrets
-come from Terraform variables (all marked `sensitive`), never hardcoded.
+`docker-compose.yml` inline. This is the data-plane subset of
+`compose/docker-compose.yml` (mongo, redis, api), without the observability
+services (Prometheus, Grafana) which stay in the local stack. Secrets come
+from Terraform variables (all marked `sensitive`), never hardcoded.
 
 See [ADR 0003](../../docs/decisions/0003-aws-single-host-ec2-with-compose-userdata.md)
 for why a single EC2 host instead of ECS/EKS, and why the public exposure is
@@ -40,6 +42,24 @@ terraform apply
 | api_url | `http://<ip>:3000/api` |
 | ssh_command | comando SSH al host (ajustar la clave privada) |
 
+La API queda en el puerto **3000** (`http://<ip>:3000`), que es donde
+publica el contenedor. El security group también abre el 80 para futuro uso
+(un reverse proxy), pero hoy no hay nada escuchando ahí: usar el 3000.
+
+### Verificar el deploy
+
+El `user_data` instala Docker y levanta el stack en el primer boot, lo que
+tarda **un par de minutos** después de que `apply` termina. La instancia
+existe antes de que la app responda. Para verificar:
+
+```bash
+curl -fsS http://<server_public_ip>:3000/health   # 200 cuando el stack levantó
+# o por SSH:
+ssh ubuntu@<server_public_ip> "cd /home/ubuntu/app && docker compose ps"
+```
+
+Si `/health` no responde enseguida, esperar a que termine el bootstrap.
+
 Tear down with `terraform destroy`.
 
 ## What it creates
@@ -60,13 +80,16 @@ Ver `variables.tf` para la lista completa con descripciones y validaciones
 
 ## Notes
 
-- **Exposición de red**: HTTP (80) y la API (3000) son públicos a propósito
-  (es un demo accesible). SSH (22) queda restringido a `var.admin_cidr`:
-  poner tu IP en `/32`, nunca `0.0.0.0/0`. El `associate_public_ip_address`
-  se declara explícito para que la IP pública sea una decisión revisada.
+- **Exposición de red**: la API (3000) es pública a propósito (demo
+  accesible). El 80 también está abierto en el security group para un futuro
+  reverse proxy, pero hoy no hay servicio en ese puerto. SSH (22) queda
+  restringido a `var.admin_cidr`: poner tu IP en `/32`, nunca `0.0.0.0/0`.
+  El `associate_public_ip_address` se declara explícito para que la IP
+  pública sea una decisión revisada.
 - **State**: backend local (`terraform.tfstate`, gitignored). El state puede
   contener secretos en texto plano, por eso no se commitea. Un backend remoto
   está fuera del alcance del PIN.
-- **Coherencia**: este módulo espeja `compose/docker-compose.yml` y
-  `terraform/local`. Un cambio en el stack debe replicarse en los tres
-  (ver [ADR 0002](../../docs/decisions/0002-dual-terraform-modules-local-and-aws.md)).
+- **Coherencia**: este módulo corre el subconjunto de datos
+  (mongo + redis + api) de `compose/docker-compose.yml` y `terraform/local`,
+  sin la observabilidad. Un cambio en ese subconjunto debe replicarse en los
+  tres (ver [ADR 0002](../../docs/decisions/0002-dual-terraform-modules-local-and-aws.md)).

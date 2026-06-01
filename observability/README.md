@@ -30,7 +30,8 @@ Medir y visualizar el comportamiento de la API en tiempo real:
 3. Grafana consulta a Prometheus (datasource `uid: prometheus`).
 4. Grafana carga automaticamente el dashboard `Pokedex API` desde JSON.
 
-Todo esto se monta en `docker-compose` con bind mounts:
+En `docker-compose` esto se monta con bind mounts; en `terraform/local` se
+inyecta con bloques `upload` (portable, sin paths absolutos del host):
 
 - Prometheus config -> `/etc/prometheus/prometheus.yml`
 - Grafana provisioning -> `/etc/grafana/provisioning`

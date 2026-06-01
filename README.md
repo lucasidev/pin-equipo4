@@ -49,7 +49,13 @@ docs/               runbook, capturas del dashboard, entrega
 
 ## Quick start (local)
 
-Requiere Docker (o Podman) y just.
+Requisitos:
+
+- Docker o Podman (el engine se autodetecta; `CONTAINER_ENGINE` lo fuerza).
+- [`just`](https://github.com/casey/just) (task runner).
+- Node.js (lo usa `just up` para elegir puertos libres vía `ensure-ports`).
+- Las imágenes de GHCR deben ser accesibles (son públicas; si no, `docker login ghcr.io`).
+- Para el camino IaC: Terraform >= 1.6 (ver [`terraform/local`](terraform/local/README.md)).
 
 ```bash
 cp compose/.env.example compose/.env   # completar secrets
@@ -64,6 +70,13 @@ Servicios expuestos:
 | http://localhost:3000/metrics | metricas Prometheus del api |
 | http://localhost:9090 | Prometheus |
 | http://localhost:3001 | Grafana |
+
+Verificar que levantó OK:
+
+```bash
+just status                            # todos los contenedores Up/healthy
+curl -fsS http://localhost:3000/health # debe devolver 200 con mongo y redis ok
+```
 
 ```bash
 just load        # corre la prueba de carga k6 (genera trafico)
