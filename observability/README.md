@@ -21,7 +21,6 @@ Medir y visualizar el comportamiento de la API en tiempo real:
 - [`grafana/provisioning/dashboards/dashboards.yml`](grafana/provisioning/dashboards/dashboards.yml)
   - Provider de dashboards por archivo.
 - [`grafana/dashboards/pokedex-api.json`](grafana/dashboards/pokedex-api.json)
-
   - Dashboard principal de la API.
 
 ## Como funciona el flujo completo
