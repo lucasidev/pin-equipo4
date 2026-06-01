@@ -2,9 +2,9 @@
 
 Declarative provisioning of the full stack on a local container engine,
 using the [kreuzwerker/docker](https://registry.terraform.io/providers/kreuzwerker/docker/latest)
-provider. This is the Infrastructure-as-Code deliverable: the same six
-services the compose file runs (mongo, redis, api, web, prometheus,
-grafana), defined as Terraform resources with managed state.
+provider. This is the Infrastructure-as-Code deliverable: the same five
+services the compose file runs (mongo, redis, api, prometheus, grafana),
+defined as Terraform resources with managed state.
 
 The observability config (`prometheus.yml`, the Grafana datasource and
 dashboards) is injected with `upload` blocks instead of host bind mounts,
@@ -31,7 +31,6 @@ terraform apply
 
 | Output | Default |
 |---|---|
-| web_url | http://localhost:8080 |
 | api_url | http://localhost:3000/api |
 | api_metrics_url | http://localhost:3000/metrics |
 | prometheus_url | http://localhost:9090 |

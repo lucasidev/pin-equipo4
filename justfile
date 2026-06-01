@@ -16,7 +16,7 @@ default:
 ensure-ports:
     node scripts/ensure-ports.mjs
 
-# Pull images and start the full stack (api, web, mongo, redis,
+# Pull images and start the full stack (api, mongo, redis,
 # prometheus, grafana). Resolves host ports first.
 up: ensure-ports
     {{compose}} up -d

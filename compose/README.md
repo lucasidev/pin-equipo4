@@ -9,13 +9,15 @@ Levantar, con un solo comando, todos los servicios del entregable:
 - base de datos (`mongo`)
 - cache (`redis`)
 - backend (`api`)
-- frontend (`web`)
 - observabilidad (`prometheus`, `grafana`)
 - carga de prueba bajo demanda (`k6`)
 
+> El frontend (`pokedex-web`) no forma parte de este stack: el entregable se
+> evalúa sobre el backend, ejercitado por HTTP (k6, `/metrics`, `/health`).
+
 ## Archivo principal
 
-- [`docker-compose.yml`](/home/pepe/proyectos/pin-equipo4/compose/docker-compose.yml)
+- [`docker-compose.yml`](docker-compose.yml)
 
 ## Servicios y funcion de cada uno
 
@@ -46,14 +48,7 @@ Levantar, con un solo comando, todos los servicios del entregable:
   - JWT
   - usuario admin seed
   - rate limit por IP
-  - CORS para el frontend local
-
-### `web` (`ghcr.io/lucasidev/pokedex-web:latest`)
-
-- Frontend React servido por nginx.
-- Depende de `api` saludable.
-- Expone `80` interno y publica en `WEB_HOST_PORT` (default `8080`).
-- Se conecta al backend por red interna Compose (`http://api:3000`).
+  - CORS
 
 ### `prometheus` (`prom/prometheus:v3.1.0`)
 
@@ -86,7 +81,7 @@ Levantar, con un solo comando, todos los servicios del entregable:
 
 1. `mongo` y `redis`
 2. `api` (cuando `mongo` y `redis` estan healthy)
-3. `web` y `prometheus`
+3. `prometheus`
 4. `grafana`
 5. `k6` solo cuando se invoca manualmente
 
@@ -94,7 +89,7 @@ Levantar, con un solo comando, todos los servicios del entregable:
 
 Template:
 
-- [`compose/.env.example`](/home/pepe/proyectos/pin-equipo4/compose/.env.example)
+- [`.env.example`](.env.example)
 
 Uso:
 
@@ -114,13 +109,11 @@ Variables clave:
   - `RATE_LIMIT_MAX` (subir para pruebas de carga, ej. `2000`)
 - Puertos host:
   - `API_HOST_PORT`
-  - `WEB_HOST_PORT`
   - `PROMETHEUS_HOST_PORT`
   - `GRAFANA_HOST_PORT`
 
 ## URLs por defecto
 
-- Frontend: `http://127.0.0.1:8080`
 - API: `http://127.0.0.1:3000`
 - Health API: `http://127.0.0.1:3000/health`
 - Metrics API: `http://127.0.0.1:3000/metrics`

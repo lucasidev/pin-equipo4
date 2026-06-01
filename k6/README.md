@@ -83,7 +83,7 @@ docker compose -f compose/docker-compose.yml --env-file compose/.env --profile l
 
 ## Variables usadas por el test
 
-- `BASE_URL` (default interno: `http://localhost:3000`)
+- `BASE_URL` (fallback del script: `http://localhost:3000`; vía `just load` el compose inyecta `http://api:3000`)
 - `ADMIN_EMAIL` (default: `admin@pokedex.local`)
 - `ADMIN_PASSWORD` (default: `changeme12345`)
 

@@ -1,4 +1,4 @@
-# The six long-running services. depends_on in the docker provider waits
+# The five long-running services. depends_on in the docker provider waits
 # for container creation, not health, so the app containers also use
 # restart = "unless-stopped" to recover if they start before their
 # dependencies accept connections. Healthchecks mirror the compose file.
