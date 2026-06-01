@@ -58,10 +58,12 @@ GitHub Actions (CI/CD)
 ### 3. Seguridad (20%)
 
 - **SBOM (CycloneDX)**: generado en el CI del api (`just sbom` local, job
-  dedicado en CI). Captura: `img/sbom-artifact.png`.
+  dedicado en CI). El run sube el SBOM como artifact, visible en
+  `img/api-ci-green.png`.
 - **SAST + SCA**: SonarCloud (calidad + security hotspots) y Snyk
-  (dependencias e IaC) corren en los pipelines. Capturas:
-  `img/sonarcloud-passed.png`, `img/snyk.png`.
+  (dependencias e IaC) corren en los pipelines. El Quality Gate de Sonar en
+  `img/sonarcloud-passed.png`; los jobs SonarCloud y Snyk en verde en
+  `img/api-ci-green.png`.
 - **Auth a la nube sin claves**: OIDC en vez de access keys estáticas
   ([ADR 0001](decisions/0001-oidc-over-static-aws-keys.md), how-to en
   [`secrets.md`](secrets.md)).
