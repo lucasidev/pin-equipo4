@@ -42,8 +42,9 @@ observability/
 k6/                 script de carga contra el api
 terraform/
   local/            provider docker: levanta el stack
-  aws/              (Fase 2) despliegue en la nube
-.github/workflows/  CI de infra (compose, terraform, SBOM, sonar, snyk)
+  aws/              EC2 + VPC: despliegue en la nube
+  bootstrap/        bucket S3 para el state remoto del modulo aws
+.github/workflows/  CI/CD de infra (validate, deploy AWS, SBOM, sonar, snyk)
 docs/               runbook, capturas del dashboard, entrega
 ```
 
