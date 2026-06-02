@@ -18,18 +18,24 @@ an explicit decision.
 
 ## Prerequisites
 
-- Terraform >= 1.6
-- AWS credentials. In CI this is OIDC (see
-  [`docs/secrets.md`](../../docs/secrets.md) and
-  [ADR 0001](../../docs/decisions/0001-oidc-over-static-aws-keys.md)); locally
-  it is your usual AWS profile or environment credentials.
+- Terraform >= 1.10 (el backend S3 usa `use_lockfile` para el lock nativo).
+- AWS credentials. En CI son **access keys** (`AWS_ACCESS_KEY_ID` /
+  `AWS_SECRET_ACCESS_KEY`); ver [`docs/secrets.md`](../../docs/secrets.md) y
+  [ADR 0004](../../docs/decisions/0004-static-keys-for-aws-deploy-now.md).
+  Localmente, tu perfil AWS o las env vars de siempre.
+- El bucket S3 del state debe existir: correr [`terraform/bootstrap`](../bootstrap/README.md)
+  una vez antes del primer `init` de este módulo.
 - An SSH public key to inject into the instance (`var.ssh_public_key`).
 
 ## Usage
 
+El state es remoto (S3). En CI el deploy se dispara a mano desde
+**Actions > CI > Run workflow** (input `action` = `apply` o `destroy`).
+Localmente:
+
 ```bash
 cp terraform.tfvars.example terraform.tfvars   # fill in the secrets and ssh key
-terraform init
+terraform init                                 # conecta al backend S3
 terraform plan
 terraform apply
 ```
