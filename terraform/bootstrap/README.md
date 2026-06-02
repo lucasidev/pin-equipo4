@@ -21,7 +21,13 @@ un state local, fuera del modulo principal.
 
 ## Uso (una vez)
 
-Requiere credenciales AWS (las access keys de la cuenta) y Terraform >= 1.10.
+Dos caminos.
+
+**Via CI (recomendado, sin keys locales):** Actions > CI > Run workflow >
+`action = bootstrap`. El job usa los secrets de GitHub, crea el bucket y es
+idempotente (si ya existe, lo importa antes del apply).
+
+**Local:** requiere credenciales AWS (access keys) y Terraform >= 1.10.
 
 ```bash
 cd terraform/bootstrap
