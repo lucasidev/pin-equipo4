@@ -39,9 +39,24 @@ Un push a main solo **propone** deploy si tocó `terraform/aws/**` o
 `changes` lo decide con un `git diff` del push.
 
 Caso límite: el filtro mira la infra de **este** repo, no la imagen de la app.
-Si `pokedex-api` publica una imagen `:latest` nueva (en su propio repo), eso no
-es un push acá, así que no auto-deploya. Para tomar la imagen nueva sin cambiar
-infra, usar el deploy manual (`action = apply`).
+Si `pokedex-api` publica una imagen nueva (en su propio repo), eso no es un
+push acá, así que no auto-deploya.
+
+### Redeploy de una imagen nueva (manual)
+
+La API publica cada build con un tag inmutable `sha-<commit>` (además de
+`latest`). Para rodar una imagen nueva a la EC2:
+
+1. Actions > CI > Run workflow.
+2. `action = apply`, y en `image_tag` pegar el tag, ej. `sha-abc1234` (se ve
+   en el package de GHCR o en el run del CI de la API).
+3. Aprobar el environment.
+
+El tag va a `TF_VAR_api_image`; como cambia el `user_data`, Terraform
+**recrea la instancia** con la imagen nueva (`user_data_replace_on_change`).
+Trade-off: breve downtime e IP pública nueva en cada redeploy, aceptable para
+un host de demo. Sin `image_tag`, el deploy usa el default `latest`, que sirve
+para el primer deploy pero no rota imagenes por si solo (no es inmutable).
 
 ## Autenticación a AWS
 
