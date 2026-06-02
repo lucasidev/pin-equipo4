@@ -4,6 +4,13 @@ name: AWS bootstrap state (reusable)
 # una vez. Idempotente: si el bucket ya existe, lo importa antes del apply.
 on:
   workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_REGION:
+        required: true
 
 permissions:
   contents: read

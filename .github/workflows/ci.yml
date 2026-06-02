@@ -145,7 +145,16 @@ jobs:
     uses: ./.github/workflows/aws-deploy.yml
     with:
       image_tag: ${{ inputs.image_tag || '' }}
-    secrets: inherit
+    # Pasar solo los secrets que el reusable necesita (no 'inherit').
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      MONGO_ROOT_PASSWORD: ${{ secrets.MONGO_ROOT_PASSWORD }}
 
   # Manual: Actions > CI > Run workflow > action = bootstrap (una vez).
   bootstrap-aws:
@@ -153,7 +162,10 @@ jobs:
     needs: validate
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'bootstrap' }}
     uses: ./.github/workflows/aws-bootstrap.yml
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
 
   # Manual: Actions > CI > Run workflow > action = destroy.
   destroy-aws:
@@ -161,4 +173,12 @@ jobs:
     needs: validate
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' }}
     uses: ./.github/workflows/aws-destroy.yml
-    secrets: inherit
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      MONGO_ROOT_PASSWORD: ${{ secrets.MONGO_ROOT_PASSWORD }}

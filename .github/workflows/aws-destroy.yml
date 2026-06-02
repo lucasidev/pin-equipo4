@@ -4,6 +4,23 @@ name: AWS destroy (reusable)
 # production (aprobacion manual del owner antes de bajar la infra).
 on:
   workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_REGION:
+        required: true
+      SSH_PUBLIC_KEY:
+        required: true
+      ADMIN_PASSWORD:
+        required: true
+      JWT_SECRET:
+        required: true
+      REDIS_PASSWORD:
+        required: true
+      MONGO_ROOT_PASSWORD:
+        required: true
 
 permissions:
   contents: read

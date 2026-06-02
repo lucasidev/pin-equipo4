@@ -62,18 +62,9 @@ jobs:
         with:
           sarif_file: snyk.sarif
 
-  sonarcloud:
-    name: SonarCloud Code Analysis
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    # Enable with repository variable ENABLE_SONAR=true
-    if: ${{ vars.ENABLE_SONAR == 'true' }}
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+# Nota: el analisis de SonarCloud lo provee la GitHub App de SonarCloud
+# conectada al repo, que postea el check "SonarCloud Code Analysis" por su
+# cuenta. NO se define un job aca con ese mismo nombre: tener dos checks
+# homonimos hacia que el job (skipped por estar gateado off) tapara el FAILURE
+# real de la app frente al required check del ruleset, dejando mergear PRs con
+# el Quality Gate en rojo. El analisis real es el de la App.
