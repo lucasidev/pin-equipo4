@@ -47,3 +47,29 @@ resource "aws_s3_bucket_public_access_block" "tfstate" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+# Reject any non-TLS request: the state can contain secrets, so it must never
+# travel over plain HTTP.
+resource "aws_s3_bucket_policy" "tfstate_tls_only" {
+  bucket = aws_s3_bucket.tfstate.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "DenyInsecureTransport"
+      Effect    = "Deny"
+      Principal = "*"
+      Action    = "s3:*"
+      Resource = [
+        aws_s3_bucket.tfstate.arn,
+        "${aws_s3_bucket.tfstate.arn}/*",
+      ]
+      Condition = {
+        Bool = { "aws:SecureTransport" = "false" }
+      }
+    }]
+  })
+}
+
+# Note: S3 server access logging is intentionally omitted. It would need a
+# second log-delivery bucket, which is overkill for a single-team PIN state
+# store. CloudTrail data events cover audit needs if ever required.
