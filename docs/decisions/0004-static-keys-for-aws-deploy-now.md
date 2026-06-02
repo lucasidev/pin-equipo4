@@ -52,10 +52,24 @@ auth de los jobs y correr el bootstrap, sin tocar el resto.
 ## Nota: cómo se dispara el deploy
 
 El deploy no es manual puro ni auto-push sin freno. Es **CD con gate de
-aprobación**: un push a `main` dispara el workflow, pero el job de `apply`
-declara `environment: production`, que exige la aprobación del owner antes de
-tocar AWS. El `destroy` y el `bootstrap` del bucket de state son manuales
-(`workflow_dispatch`). Los workflows están modularizados en reusables
-(`aws-deploy.yml`, `aws-destroy.yml`, `aws-bootstrap.yml`) orquestados desde
-`ci.yml`, patrón inspirado en el repo del equipo pero con el gate de
-aprobación que aquel no tiene.
+aprobación y filtro de cambios**:
+
+- Un push a `main` dispara el workflow, pero el `apply` solo se **propone** si
+  el push tocó la infra que se deploya: `terraform/aws/**` o
+  `compose/docker-compose.yml` (lo detecta el job `changes` con un `git diff`).
+  Un merge de solo-docs, k6 u observabilidad **no** dispara deploy.
+- Cuando sí se propone, el job de `apply` declara `environment: production`,
+  que exige la aprobación del owner antes de tocar AWS.
+- El `destroy` y el `bootstrap` del bucket de state son manuales
+  (`workflow_dispatch`).
+
+Caso límite a tener presente: el filtro detecta cambios en la **infra de este
+repo**, no en la **imagen** de la app. La imagen (`pokedex-api:latest`) la
+publica el CI de su propio repo a GHCR; eso no es un push a pin-equipo4, así
+que no auto-deploya. Para tomar una imagen nueva sin cambiar la infra, se usa
+el deploy manual: Actions > CI > Run workflow > `action = apply`.
+
+Los workflows están modularizados en reusables (`aws-deploy.yml`,
+`aws-destroy.yml`, `aws-bootstrap.yml`) orquestados desde `ci.yml`, patrón
+inspirado en el repo del equipo pero con el gate de aprobación y el filtro de
+cambios que aquel no tiene.
