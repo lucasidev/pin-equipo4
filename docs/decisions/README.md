@@ -22,9 +22,10 @@ riesgo no lleva ADR: vive en el README o en un comentario inline.
 
 | ADR | Decisión |
 |---|---|
-| [0001](0001-oidc-over-static-aws-keys.md) | OIDC en vez de access keys estáticas para autenticar el CI contra AWS |
+| [0001](0001-oidc-over-static-aws-keys.md) | OIDC en vez de access keys estáticas para autenticar el CI contra AWS (supersedida por 0004) |
 | [0002](0002-dual-terraform-modules-local-and-aws.md) | Dos módulos Terraform paralelos: `local` (docker) y `aws` (EC2 + VPC) |
 | [0003](0003-aws-single-host-ec2-with-compose-userdata.md) | EC2 single-host con compose en `user_data` y exposición pública declarada |
+| [0004](0004-static-keys-for-aws-deploy-now.md) | Access keys estáticas para el deploy a AWS por ahora (supersede a 0001) |
 
 ## Formato
 

@@ -20,37 +20,39 @@ entorno.
 - **AWS** se autentica por OIDC, sin claves de larga vida en el repo ni en
   los secrets de GitHub.
 
-## 1. Autenticación a AWS: OIDC, no access keys
+## 1. Autenticación a AWS: access keys (hoy), OIDC (objetivo futuro)
 
-El pipeline (`.github/workflows/ci.yml`) se autentica contra AWS con OIDC:
+> Estado actual: el pipeline usa **access keys estáticas**. Ver
+> [ADR 0004](decisions/0004-static-keys-for-aws-deploy-now.md) para el porqué
+> (desbloquear el deploy ya, con un método validado). OIDC es el objetivo a
+> futuro; su bootstrap está documentado más abajo y sigue siendo el camino
+> recomendado en seguridad.
+
+El pipeline (`.github/workflows/ci.yml`) se autentica contra AWS con access
+keys, pasadas como variables de entorno a cada job de Terraform:
 
 ```yaml
-permissions:
-  id-token: write   # el runner pide un token OIDC de corta duración
-  contents: read
-
-steps:
-  - name: Configure AWS credentials (OIDC)
-    uses: aws-actions/configure-aws-credentials@<sha>  # v4
-    with:
-      role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-      aws-region: ${{ secrets.AWS_REGION }}
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
 ```
 
-### Por qué OIDC y no `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
+### Access keys vs OIDC
 
-| | Access keys estáticas | OIDC |
+| | Access keys estáticas (hoy) | OIDC (futuro) |
 |---|---|---|
 | Vida útil | Permanentes hasta rotarlas a mano | Token de minutos, por job |
 | Si se filtran | Acceso hasta que alguien las revoque | Inservible al expirar |
 | Qué se guarda en GitHub | El secreto real (la key) | Solo el ARN del role (no es secreto) |
 | Rotación | Manual | No aplica |
 
-Terraform funciona igual con cualquiera de las dos: el `provider "aws"` solo
-declara `region` y toma las credenciales de la cadena estándar de AWS. La
-diferencia es de seguridad, no de funcionalidad.
+OIDC es superior en seguridad; se pospuso por el costo de bootstrap (ver ADR
+0004). Terraform funciona igual con cualquiera de las dos: el `provider "aws"`
+solo declara `region` y toma las credenciales de la cadena estándar de AWS.
+La diferencia es de seguridad, no de funcionalidad.
 
-### Bootstrap de OIDC (una sola vez)
+### Bootstrap de OIDC (cuando se migre, una sola vez)
 
 OIDC tiene un costo inicial: hay que crear en AWS el identity provider y un
 IAM role que confíe en este repo. Es lo que hace que el workflow tenga algo
@@ -241,13 +243,17 @@ de fallar por falta de credenciales.
 
 | Nombre | Para qué | Tipo |
 |---|---|---|
-| `AWS_ROLE_TO_ASSUME` | ARN del IAM role que asume el runner por OIDC | secret |
+| `AWS_ACCESS_KEY_ID` | Access key de la IAM user que corre Terraform | secret |
+| `AWS_SECRET_ACCESS_KEY` | Secret de esa access key | secret |
 | `AWS_REGION` | Región de despliegue (ej. `us-east-1`) | secret |
 | `MONGO_ROOT_PASSWORD` | Password root de Mongo | secret |
 | `REDIS_PASSWORD` | Password de Redis (AUTH) | secret |
 | `JWT_SECRET` | Clave de firma JWT (>= 32 caracteres) | secret |
 | `ADMIN_PASSWORD` | Password del admin sembrado (>= 8 caracteres) | secret |
 | `SSH_PUBLIC_KEY` | Clave SSH pública para la EC2 | secret |
+
+> Cuando se migre a OIDC, `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` se
+> reemplazan por `AWS_ROLE_TO_ASSUME` (el ARN del role, que no es secreto).
 
 ### GitHub Actions variables (no secretas)
 
