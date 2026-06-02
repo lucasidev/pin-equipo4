@@ -26,6 +26,7 @@ riesgo no lleva ADR: vive en el README o en un comentario inline.
 | [0002](0002-dual-terraform-modules-local-and-aws.md) | Dos módulos Terraform paralelos: `local` (docker) y `aws` (EC2 + VPC) |
 | [0003](0003-aws-single-host-ec2-with-compose-userdata.md) | EC2 single-host con compose en `user_data` y exposición pública declarada |
 | [0004](0004-static-keys-for-aws-deploy-now.md) | Access keys estáticas para el deploy a AWS por ahora (supersede a 0001) |
+| [0005](0005-recreate-on-deploy-and-rollback-strategy.md) | Recrear la instancia en cada deploy de imagen y estrategia de rollback |
 
 ## Formato
 
