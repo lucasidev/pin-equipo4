@@ -1,0 +1,42 @@
+name: AWS bootstrap state (reusable)
+
+# Reusable: crea el bucket S3 que aloja el state de terraform/aws. Se corre
+# una vez. Idempotente: si el bucket ya existe, lo importa antes del apply.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    name: Bootstrap state bucket (AWS)
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+      BUCKET: pin-equipo4-tfstate
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: "1.13.1"
+
+      - name: Terraform init
+        run: terraform -chdir=terraform/bootstrap init
+
+      - name: Import the bucket if it already exists
+        run: |
+          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "Bucket exists, importing into state."
+            terraform -chdir=terraform/bootstrap import aws_s3_bucket.tfstate "$BUCKET" || true
+          else
+            echo "Bucket does not exist yet, apply will create it."
+          fi
+
+      - name: Terraform apply
+        run: terraform -chdir=terraform/bootstrap apply -auto-approve

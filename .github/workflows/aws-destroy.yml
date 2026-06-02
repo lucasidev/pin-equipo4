@@ -1,0 +1,42 @@
+name: AWS destroy (reusable)
+
+# Reusable: terraform destroy del modulo aws. Gated por el environment
+# production (aprobacion manual del owner antes de bajar la infra).
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  destroy:
+    name: Terraform destroy (AWS)
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: terraform-aws
+      cancel-in-progress: false
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: "1.13.1"
+
+      - name: Terraform init (aws)
+        run: terraform -chdir=terraform/aws init
+
+      - name: Terraform destroy (aws)
+        env:
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
+          TF_VAR_admin_cidr: ${{ vars.ADMIN_CIDR }}
+          TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
+          TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+          TF_VAR_redis_password: ${{ secrets.REDIS_PASSWORD }}
+          TF_VAR_mongo_root_password: ${{ secrets.MONGO_ROOT_PASSWORD }}
+        run: terraform -chdir=terraform/aws destroy -auto-approve
