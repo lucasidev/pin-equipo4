@@ -27,7 +27,13 @@ variable "admin_cidr" {
 }
 
 variable "api_image" {
-  description = "Container image for the api, published to GHCR by its CI."
+  description = <<-EOT
+    Container image for the api, published to GHCR by its CI. For a repeatable
+    deploy, pass an immutable tag (e.g. ghcr.io/lucasidev/pokedex-api:sha-abc1234)
+    via TF_VAR_api_image: changing it recreates the instance with the new image.
+    The :latest default works for the first deploy but does not roll out new
+    images on its own (it is not an immutable reference).
+  EOT
   type        = string
   default     = "ghcr.io/lucasidev/pokedex-api:latest"
 }

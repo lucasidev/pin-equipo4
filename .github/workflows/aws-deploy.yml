@@ -4,6 +4,12 @@ name: AWS deploy (reusable)
 # production (aprobacion manual del owner antes de tocar AWS).
 on:
   workflow_call:
+    inputs:
+      image_tag:
+        description: 'Tag de imagen a deployar (vacio = latest)'
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -39,7 +45,16 @@ jobs:
           TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
           TF_VAR_redis_password: ${{ secrets.REDIS_PASSWORD }}
           TF_VAR_mongo_root_password: ${{ secrets.MONGO_ROOT_PASSWORD }}
-        run: terraform -chdir=terraform/aws apply -auto-approve
+        run: |
+          # Si se paso un tag de imagen, deployar esa imagen inmutable; si no,
+          # dejar el default del modulo (latest, solo util para el primer deploy).
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            export TF_VAR_api_image="ghcr.io/lucasidev/pokedex-api:${{ inputs.image_tag }}"
+            echo "Deploying image: $TF_VAR_api_image"
+          else
+            echo "Deploying default image (latest)"
+          fi
+          terraform -chdir=terraform/aws apply -auto-approve
 
       - name: Outputs (server URL)
         run: terraform -chdir=terraform/aws output

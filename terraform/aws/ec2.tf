@@ -34,6 +34,13 @@ resource "aws_instance" "pokedex_server" {
   # is a reviewed decision, not an implicit default.
   associate_public_ip_address = true
 
+  # The image tag is baked into user_data, which only runs on first boot.
+  # Recreate the instance when user_data changes (i.e. when api_image points
+  # at a new immutable tag), so a new image is actually rolled out. Trade-off:
+  # a new deploy means a fresh instance (brief downtime, new public IP),
+  # acceptable for a demo host. See ADR 0004.
+  user_data_replace_on_change = true
+
   user_data = <<-EOF
               #!/bin/bash
               set -euo pipefail

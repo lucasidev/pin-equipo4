@@ -25,6 +25,10 @@ on:
           - apply
           - destroy
         default: none
+      image_tag:
+        description: 'Tag de imagen a deployar (ej. sha-abc1234). Vacio = latest.'
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -139,6 +143,8 @@ jobs:
         (github.event_name == 'workflow_dispatch' && inputs.action == 'apply')
       )
     uses: ./.github/workflows/aws-deploy.yml
+    with:
+      image_tag: ${{ inputs.image_tag || '' }}
     secrets: inherit
 
   # Manual: Actions > CI > Run workflow > action = bootstrap (una vez).

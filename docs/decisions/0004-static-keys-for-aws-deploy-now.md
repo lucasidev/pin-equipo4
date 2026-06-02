@@ -64,10 +64,14 @@ aprobación y filtro de cambios**:
   (`workflow_dispatch`).
 
 Caso límite a tener presente: el filtro detecta cambios en la **infra de este
-repo**, no en la **imagen** de la app. La imagen (`pokedex-api:latest`) la
-publica el CI de su propio repo a GHCR; eso no es un push a pin-equipo4, así
-que no auto-deploya. Para tomar una imagen nueva sin cambiar la infra, se usa
-el deploy manual: Actions > CI > Run workflow > `action = apply`.
+repo**, no en la **imagen** de la app. La imagen la publica el CI de su propio
+repo a GHCR (con tag inmutable `sha-<commit>` además de `latest`); eso no es un
+push a pin-equipo4, así que no auto-deploya. Para rodar una imagen nueva se usa
+el deploy manual (`action = apply` + `image_tag = sha-<commit>`): ese tag va a
+`TF_VAR_api_image`, cambia el `user_data` y Terraform recrea la instancia con
+la imagen nueva (`user_data_replace_on_change`). El default `latest` solo sirve
+para el primer deploy: no es una referencia inmutable, así que no rota imagenes
+por si solo.
 
 Los workflows están modularizados en reusables (`aws-deploy.yml`,
 `aws-destroy.yml`, `aws-bootstrap.yml`) orquestados desde `ci.yml`, patrón
