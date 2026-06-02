@@ -1,7 +1,11 @@
 # 0001. OIDC en vez de access keys estáticas para autenticar el CI contra AWS
 
-- Estado: Aceptada
+- Estado: Supersedida por [ADR 0004](0004-static-keys-for-aws-deploy-now.md)
 - Fecha: 2026-06-01
+
+> Nota: esta decisión se revirtió por pragmatismo al momento de deployar (ver
+> ADR 0004). OIDC sigue siendo el objetivo a futuro; el razonamiento de este
+> ADR sobre por qué OIDC es superior en seguridad se mantiene válido.
 
 ## Contexto
 
