@@ -48,3 +48,14 @@ auth de los jobs y correr el bootstrap, sin tocar el resto.
   mínimo necesario (EC2 + VPC + S3 del state), y rotar las keys periódicamente.
 - **Deuda explícita:** migrar a OIDC queda como mejora pendiente. El ADR 0001
   conserva el cómo y el por qué; este ADR registra por qué se pospuso.
+
+## Nota: cómo se dispara el deploy
+
+El deploy no es manual puro ni auto-push sin freno. Es **CD con gate de
+aprobación**: un push a `main` dispara el workflow, pero el job de `apply`
+declara `environment: production`, que exige la aprobación del owner antes de
+tocar AWS. El `destroy` y el `bootstrap` del bucket de state son manuales
+(`workflow_dispatch`). Los workflows están modularizados en reusables
+(`aws-deploy.yml`, `aws-destroy.yml`, `aws-bootstrap.yml`) orquestados desde
+`ci.yml`, patrón inspirado en el repo del equipo pero con el gate de
+aprobación que aquel no tiene.
