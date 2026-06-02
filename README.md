@@ -84,6 +84,16 @@ just load        # corre la prueba de carga k6 (genera trafico)
 just down        # baja el stack
 ```
 
+## Documentacion
+
+- [`docs/entrega.md`](docs/entrega.md): mapa de la rubrica a la evidencia.
+- [`docs/runbook.md`](docs/runbook.md): operacion y reversion del deploy AWS
+  (deploy manual, rollback, destroy, state, lock, SSH).
+- [`docs/secrets.md`](docs/secrets.md): manejo de secrets y auth a AWS.
+- [`docs/decisions/`](docs/decisions/README.md): ADRs (decisiones con sus
+  alternativas y tradeoffs).
+- [`.github/workflows/README.md`](.github/workflows/README.md): flujo de CI/CD.
+
 ## Rubrica del Proyecto 1
 
 | Criterio | Peso | Donde |
