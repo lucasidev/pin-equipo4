@@ -56,6 +56,9 @@ jobs:
 
       - name: Terraform apply (aws)
         env:
+          # El input se lee por env var, nunca interpolado con ${{ }} dentro del
+          # run: interpolar un input directo en el shell es un vector de inyeccion.
+          IMAGE_TAG: ${{ inputs.image_tag }}
           TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
           TF_VAR_admin_cidr: ${{ vars.ADMIN_CIDR }}
           TF_VAR_admin_password: ${{ secrets.ADMIN_PASSWORD }}
@@ -65,8 +68,8 @@ jobs:
         run: |
           # Si se paso un tag de imagen, deployar esa imagen inmutable; si no,
           # dejar el default del modulo (latest, solo util para el primer deploy).
-          if [ -n "${{ inputs.image_tag }}" ]; then
-            export TF_VAR_api_image="ghcr.io/lucasidev/pokedex-api:${{ inputs.image_tag }}"
+          if [ -n "$IMAGE_TAG" ]; then
+            export TF_VAR_api_image="ghcr.io/lucasidev/pokedex-api:$IMAGE_TAG"
             echo "Deploying image: $TF_VAR_api_image"
           else
             echo "Deploying default image (latest)"
